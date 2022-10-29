@@ -40,6 +40,8 @@ bool esp_osc_init(esp_osc_client_t *client, uint16_t buf_len, uint16_t port);
 esp_osc_target_t esp_osc_target(const char *address, uint16_t port);
 
 bool esp_osc_send(esp_osc_client_t *client, esp_osc_target_t *target, const char *topic, const char *format, ...);
+bool esp_osc_send_v(esp_osc_client_t *client, esp_osc_target_t *target, const char *topic, const char *format,
+                    va_list args);
 
 bool esp_osc_receive(esp_osc_client_t *client, esp_osc_callback_t callback);
 

@@ -60,11 +60,19 @@ esp_osc_target_t esp_osc_target(const char *address, uint16_t port) {
 }
 
 bool esp_osc_send(esp_osc_client_t *client, esp_osc_target_t *target, const char *topic, const char *format, ...) {
-  // prepare message
+  // send message
   va_list args;
   va_start(args, format);
-  uint32_t length = tosc_vwrite((char *)client->sbuf, client->len, topic, format, args);
+  bool ret = esp_osc_send_v(client, target, topic, format, args);
   va_end(args);
+
+  return ret;
+}
+
+bool esp_osc_send_v(esp_osc_client_t *client, esp_osc_target_t *target, const char *topic, const char *format,
+                    va_list args) {
+  // prepare message
+  uint32_t length = tosc_vwrite((char *)client->sbuf, client->len, topic, format, args);
 
   // send message
   if (sendto(client->socket, client->sbuf, length, 0, (struct sockaddr *)&target->addr, sizeof(target->addr)) < 0) {
