@@ -7,27 +7,72 @@
 
 #include <esp_osc.h>
 
-#define WIFI_SSID "SMNX_IoT"
-#define WIFI_PASS "y9Q@&h5bLIo!}bAlhI6P@HlL"
+#define WIFI_SSID ""
+#define WIFI_PASS ""
 
-#define OSC_ADDRESS "192.168.30.130"
-#define OSC_PORT 8000
+#define OSC_ADDRESS ""
+#define OSC_PORT 0
+
+#define TAG "main"
 
 esp_osc_client_t client;
 
-static void process() {
+static void sender() {
   for (;;) {
-    // send message
-    esp_osc_client_send(&client, "foo", "if", 42, 3.14);
+    // send remote message
+    if (strlen(OSC_ADDRESS) > 0) {
+      esp_osc_client_select(&client, OSC_ADDRESS, OSC_PORT);
+      esp_osc_client_send(&client, "test", "ihfdsb", 42, (int64_t)84, 3.14f, 6.28, "foo", 3, "bar");
+    }
+
+    // send local message
+    esp_osc_client_select(&client, "127.0.0.1", 9000);
+    esp_osc_client_send(&client, "test", "ihfdsb", 42, (int64_t)84, 3.14f, 6.28, "foo", 3, "bar");
 
     // delay
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
 
-static void event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-  if (event_base == WIFI_EVENT) {
-    switch (event_id) {
+static bool callback(const char *topic, const char *format, esp_osc_value_t *values) {
+  // log message
+  ESP_LOGI(TAG, "got message: %s (%s)", topic, format);
+  for (size_t i = 0; i < strlen(format); i++) {
+    switch (format[i]) {
+      case 'i':
+        ESP_LOGI(TAG, "==> i: %d", values[i].i);
+        break;
+      case 'h':
+        ESP_LOGI(TAG, "==> h: %lld", values[i].h);
+        break;
+      case 'f':
+        ESP_LOGI(TAG, "==> f: %f", values[i].f);
+        break;
+      case 'd':
+        ESP_LOGI(TAG, "==> d: %f", values[i].d);
+        break;
+      case 's':
+        ESP_LOGI(TAG, "==> s: %s", values[i].s);
+        break;
+      case 'b':
+        ESP_LOGI(TAG, "==> b: %.*s (%d)", values[i].bl, values[i].b, values[i].bl);
+        break;
+    }
+  }
+
+  return true;
+}
+
+static void receiver() {
+  for (;;) {
+    // receive messages
+    esp_osc_client_receive(&client, callback);
+  }
+}
+
+static void handler(void *arg, esp_event_base_t base, int32_t id, void *data) {
+  if (base == WIFI_EVENT) {
+    switch (id) {
       case SYSTEM_EVENT_STA_START:
         // connect to ap
         ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
@@ -73,8 +118,8 @@ void app_main() {
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
   // register event handlers
-  ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL, NULL));
-  ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &handler, NULL, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &handler, NULL, NULL));
 
   // prepare Wi-Fi config
   wifi_config_t wifi_config = {.sta = {.ssid = WIFI_SSID, .password = WIFI_PASS}};
@@ -85,9 +130,9 @@ void app_main() {
   ESP_ERROR_CHECK(esp_wifi_start());
 
   // prepare client
-  esp_osc_client_init(&client, 1024);
-  esp_osc_client_select(&client, OSC_ADDRESS, OSC_PORT);
+  esp_osc_client_init(&client, 1024, 9000);
 
   // create tasks
-  xTaskCreatePinnedToCore(process, "process", 2048, NULL, 10, NULL, 1);
+  xTaskCreatePinnedToCore(sender, "sender", 4096, NULL, 10, NULL, 1);
+  xTaskCreatePinnedToCore(receiver, "receiver", 4096, NULL, 10, NULL, 1);
 }
