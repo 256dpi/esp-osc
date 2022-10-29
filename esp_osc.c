@@ -34,14 +34,16 @@ bool esp_osc_init(esp_osc_client_t *client, uint16_t buf_len, uint16_t port) {
     return false;
   }
 
-  // bind socket
-  struct sockaddr_in addr = {0};
-  addr.sin_addr.s_addr = inet_addr("0.0.0.0");
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(port);
-  if (bind(client->socket, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-    ESP_LOGE(TAG, "failed to bind socket (%d)", errno);
-    return false;
+  // bind socket if port is available
+  if (port > 0) {
+    struct sockaddr_in addr = {0};
+    addr.sin_addr.s_addr = inet_addr("0.0.0.0");
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    if (bind(client->socket, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+      ESP_LOGE(TAG, "failed to bind socket (%d)", errno);
+      return false;
+    }
   }
 
   return true;
