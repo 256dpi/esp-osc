@@ -21,13 +21,13 @@ static void sender() {
   for (;;) {
     // send remote message
     if (strlen(OSC_ADDRESS) > 0) {
-      esp_osc_client_select(&client, OSC_ADDRESS, OSC_PORT);
-      esp_osc_client_send(&client, "test", "ihfdsb", 42, (int64_t)84, 3.14f, 6.28, "foo", 3, "bar");
+      esp_osc_select(&client, OSC_ADDRESS, OSC_PORT);
+      esp_osc_send(&client, "test", "ihfdsb", 42, (int64_t)84, 3.14f, 6.28, "foo", 3, "bar");
     }
 
     // send local message
-    esp_osc_client_select(&client, "127.0.0.1", 9000);
-    esp_osc_client_send(&client, "test", "ihfdsb", 42, (int64_t)84, 3.14f, 6.28, "foo", 3, "bar");
+    esp_osc_select(&client, "127.0.0.1", 9000);
+    esp_osc_send(&client, "test", "ihfdsb", 42, (int64_t)84, 3.14f, 6.28, "foo", 3, "bar");
 
     // delay
     vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -66,7 +66,7 @@ static bool callback(const char *topic, const char *format, esp_osc_value_t *val
 static void receiver() {
   for (;;) {
     // receive messages
-    esp_osc_client_receive(&client, callback);
+    esp_osc_receive(&client, callback);
   }
 }
 
@@ -130,7 +130,7 @@ void app_main() {
   ESP_ERROR_CHECK(esp_wifi_start());
 
   // prepare client
-  esp_osc_client_init(&client, 1024, 9000);
+  esp_osc_init(&client, 1024, 9000);
 
   // create tasks
   xTaskCreatePinnedToCore(sender, "sender", 4096, NULL, 10, NULL, 1);

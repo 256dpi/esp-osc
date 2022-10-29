@@ -6,7 +6,7 @@
 
 #define TAG "esp-osc"
 
-bool esp_osc_client_init(esp_osc_client_t *client, uint16_t buf_len, uint16_t port) {
+bool esp_osc_init(esp_osc_client_t *client, uint16_t buf_len, uint16_t port) {
   // free existing memory
   if (client->sbuf != NULL) {
     free(client->sbuf);
@@ -47,14 +47,14 @@ bool esp_osc_client_init(esp_osc_client_t *client, uint16_t buf_len, uint16_t po
   return true;
 }
 
-void esp_osc_client_select(esp_osc_client_t *client, const char *address, uint16_t port) {
+void esp_osc_select(esp_osc_client_t *client, const char *address, uint16_t port) {
   // prepare address
   client->dest.sin_addr.s_addr = inet_addr(address);
   client->dest.sin_family = AF_INET;
   client->dest.sin_port = htons(port);
 }
 
-bool esp_osc_client_send(esp_osc_client_t *client, const char *topic, const char *format, ...) {
+bool esp_osc_send(esp_osc_client_t *client, const char *topic, const char *format, ...) {
   // prepare message
   va_list args;
   va_start(args, format);
@@ -70,7 +70,7 @@ bool esp_osc_client_send(esp_osc_client_t *client, const char *topic, const char
   return true;
 }
 
-bool esp_osc_client_receive(esp_osc_client_t *client, esp_osc_callback_t callback) {
+bool esp_osc_receive(esp_osc_client_t *client, esp_osc_callback_t callback) {
   // prepare values
   esp_osc_value_t values[32];
 
