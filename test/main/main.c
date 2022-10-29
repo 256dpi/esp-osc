@@ -18,19 +18,20 @@
 esp_osc_client_t client;
 
 static void sender() {
+  // select targets
+  esp_osc_target_t targets[2] = {
+      esp_osc_target("127.0.0.1", 9000),
+      esp_osc_target(OSC_ADDRESS, OSC_PORT),
+  };
+
   for (;;) {
-    // send remote message
-    if (strlen(OSC_ADDRESS) > 0) {
-      esp_osc_select(&client, OSC_ADDRESS, OSC_PORT);
-      esp_osc_send(&client, "test", "ihfdsb", 42, (int64_t)84, 3.14f, 6.28, "foo", 3, "bar");
-    }
-
-    // send local message
-    esp_osc_select(&client, "127.0.0.1", 9000);
-    esp_osc_send(&client, "test", "ihfdsb", 42, (int64_t)84, 3.14f, 6.28, "foo", 3, "bar");
-
     // delay
     vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    // send messages
+    for (size_t i = 0; i < 2; i++) {
+      esp_osc_send(&client, &targets[i], "test", "ihfdsb", 42, (int64_t)84, 3.14f, 6.28, "foo", 3, "bar");
+    }
   }
 }
 
@@ -67,6 +68,16 @@ static void receiver() {
   for (;;) {
     // receive messages
     esp_osc_receive(&client, callback);
+  }
+}
+
+static void restarter() {
+  for (;;) {
+    // delay
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
+
+    // restart client
+    esp_osc_init(&client, 1024, 9000);
   }
 }
 
@@ -135,4 +146,5 @@ void app_main() {
   // create tasks
   xTaskCreatePinnedToCore(sender, "sender", 4096, NULL, 10, NULL, 1);
   xTaskCreatePinnedToCore(receiver, "receiver", 4096, NULL, 10, NULL, 1);
+  xTaskCreatePinnedToCore(restarter, "restarter", 4096, NULL, 10, NULL, 1);
 }

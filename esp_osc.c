@@ -49,14 +49,17 @@ bool esp_osc_init(esp_osc_client_t *client, uint16_t buf_len, uint16_t port) {
   return true;
 }
 
-void esp_osc_select(esp_osc_client_t *client, const char *address, uint16_t port) {
-  // prepare address
-  client->dest.sin_addr.s_addr = inet_addr(address);
-  client->dest.sin_family = AF_INET;
-  client->dest.sin_port = htons(port);
+esp_osc_target_t esp_osc_target(const char *address, uint16_t port) {
+  // prepare target
+  esp_osc_target_t target = {0};
+  target.addr.sin_addr.s_addr = inet_addr(address);
+  target.addr.sin_family = AF_INET;
+  target.addr.sin_port = htons(port);
+
+  return target;
 }
 
-bool esp_osc_send(esp_osc_client_t *client, const char *topic, const char *format, ...) {
+bool esp_osc_send(esp_osc_client_t *client, esp_osc_target_t *target, const char *topic, const char *format, ...) {
   // prepare message
   va_list args;
   va_start(args, format);
@@ -64,7 +67,7 @@ bool esp_osc_send(esp_osc_client_t *client, const char *topic, const char *forma
   va_end(args);
 
   // send message
-  if (sendto(client->socket, client->sbuf, length, 0, (struct sockaddr *)&client->dest, sizeof(client->dest)) < 0) {
+  if (sendto(client->socket, client->sbuf, length, 0, (struct sockaddr *)&target->addr, sizeof(target->addr)) < 0) {
     ESP_LOGE(TAG, "failed to send message (%d)", errno);
     return false;
   }
