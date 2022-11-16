@@ -41,7 +41,7 @@ static bool callback(const char *topic, const char *format, esp_osc_value_t *val
   for (size_t i = 0; i < strlen(format); i++) {
     switch (format[i]) {
       case 'i':
-        ESP_LOGI(TAG, "==> i: %d", values[i].i);
+        ESP_LOGI(TAG, "==> i: %ld", values[i].i);
         break;
       case 'h':
         ESP_LOGI(TAG, "==> h: %lld", values[i].h);
@@ -84,16 +84,16 @@ static void restarter() {
 static void handler(void *arg, esp_event_base_t base, int32_t id, void *data) {
   if (base == WIFI_EVENT) {
     switch (id) {
-      case SYSTEM_EVENT_STA_START:
+      case WIFI_EVENT_STA_START:
         // connect to ap
         ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
 
         break;
 
-      case SYSTEM_EVENT_STA_GOT_IP:
+      case IP_EVENT_STA_GOT_IP:
         break;
 
-      case SYSTEM_EVENT_STA_DISCONNECTED:
+      case WIFI_EVENT_STA_DISCONNECTED:
         // reconnect Wi-Fi
         ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
 
