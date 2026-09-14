@@ -190,14 +190,18 @@ uint32_t tosc_vwrite(char *buffer, const int len, const char *address, const cha
       case 'f': {
         if (i + 4 > len) return -3;
         const float f = (float)va_arg(ap, double);
-        *((uint32_t *)(buffer + i)) = htonl(*((uint32_t *)&f));
+        uint32_t bits;
+        memcpy(&bits, &f, sizeof(bits));
+        *((uint32_t *)(buffer + i)) = htonl(bits);
         i += 4;
         break;
       }
       case 'd': {
         if (i + 8 > len) return -3;
         const double f = (double)va_arg(ap, double);
-        *((uint64_t *)(buffer + i)) = htonll(*((uint64_t *)&f));
+        uint64_t bits;
+        memcpy(&bits, &f, sizeof(bits));
+        *((uint64_t *)(buffer + i)) = htonll(bits);
         i += 8;
         break;
       }
